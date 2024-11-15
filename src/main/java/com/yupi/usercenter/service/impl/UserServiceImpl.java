@@ -190,6 +190,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         request.getSession().removeAttribute(USER_LOGIN_STATE);
         return 1;
     }
+
+    //这边有不同，它最终使用内存查询，但我这边使用sql查询
     @Override
     public List<User> searchUsersByTags(List<String> tagNameList) {
         if(CollectionUtils.isEmpty(tagNameList)){
@@ -205,5 +207,3 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
 }
-
-// [加入我们](https://yupi.icu) 从 0 到 1 项目实战，经验拉满！10+ 原创项目手把手教程、7 日项目提升训练营、1000+ 项目经验笔记、60+ 编程经验分享直播
