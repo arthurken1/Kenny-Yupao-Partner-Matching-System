@@ -3,6 +3,7 @@ package com.yupi.usercenter.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yupi.usercenter.common.ErrorCode;
+import com.yupi.usercenter.contant.UserConstant;
 import com.yupi.usercenter.exception.BusinessException;
 import com.yupi.usercenter.model.domain.User;
 import com.yupi.usercenter.service.UserService;
@@ -191,6 +192,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         return 1;
     }
 
+    @Override
+    public boolean isAdmin(HttpServletRequest request) {
+        // 仅管理员可查询
+        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
+        User user = (User) userObj;
+        return user != null && user.getUserRole() == UserConstant.ADMIN_ROLE;
+    }
+
+    @Override
+    public boolean isAdmin(User loginUser){
+        return loginUser != null && loginUser.getUserRole() == UserConstant.ADMIN_ROLE;
+    }
+
+
     //这边有不同，它最终使用内存查询，但我这边使用sql查询
     @Override
     public List<User> searchUsersByTags(List<String> tagNameList) {
@@ -205,5 +220,39 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         List<User> userLists = userMapper.selectList(queryWrapper);
         return userLists.stream().map(this::getSafetyUser).collect(Collectors.toList());
     }
+
+    @Override
+    public int updateUser(User user, User loginUser) {
+        long userId = user.getId();
+        if (userId <= 0) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        //if is admin
+        //if not admin
+        if (!isAdmin(loginUser) && userId != loginUser.getId()) {
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        User oldUser = userMapper.selectById(userId);
+        if (oldUser == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR);
+        }
+        return userMapper.updateById(user);
+    }
+
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        Object userObject = request.getSession().getAttribute(USER_LOGIN_STATE);
+        if (userObject == null) {
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        return (User) userObject;
+    }
+
+
+
+
 
 }

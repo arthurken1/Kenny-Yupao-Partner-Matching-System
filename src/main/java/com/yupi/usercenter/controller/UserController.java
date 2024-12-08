@@ -30,6 +30,7 @@ import static com.yupi.usercenter.contant.UserConstant.USER_LOGIN_STATE;
  */
 @RestController
 @RequestMapping("/user")
+@CrossOrigin(origins = {"http://localhost:3000"})
 public class UserController {
 
     @Resource
@@ -118,7 +119,7 @@ public class UserController {
 
     @GetMapping("/search")
     public BaseResponse<List<User>> searchUsers(String username, HttpServletRequest request) {
-        if (!isAdmin(request)) {
+        if (!userService.isAdmin(request)) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         QueryWrapper<User> queryWrapper = new QueryWrapper<>();
@@ -139,9 +140,20 @@ public class UserController {
         return ResultUtils.success(userList);
     }
 
+    @PostMapping("/update")
+    public BaseResponse<Integer> updateUser(User user, HttpServletRequest request) {
+        if (user == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        User loginUser = userService.getLoginUser(request);
+
+        int result = userService.updateUser(user, loginUser);
+        return ResultUtils.success(result);
+    }
+
     @PostMapping("/delete")
     public BaseResponse<Boolean> deleteUser(@RequestBody long id, HttpServletRequest request) {
-        if (!isAdmin(request)) {
+        if (!userService.isAdmin(request)) {
             throw new BusinessException(ErrorCode.NO_AUTH);
         }
         if (id <= 0) {
@@ -159,11 +171,7 @@ public class UserController {
      * @param request
      * @return
      */
-    private boolean isAdmin(HttpServletRequest request) {
-        // 仅管理员可查询
-        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
-        User user = (User) userObj;
-        return user != null && user.getUserRole() == ADMIN_ROLE;
-    }
+
+
 
 }
