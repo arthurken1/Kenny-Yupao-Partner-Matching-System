@@ -1,28 +1,28 @@
-package com.yupi.usercenter.once;
+package com.yupi.usercenter.service;
 
 import com.yupi.usercenter.mapper.UserMapper;
 import com.yupi.usercenter.model.domain.User;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.util.StopWatch;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
+import java.util.List;
 
-//此处是一个练习方法，仅展示如何使用定时任务来导入数据，不太好
-
-
-@Component
-public class InsertUsers {
-
+@SpringBootTest
+public class InsertUsersTest {
     @Resource
-    private UserMapper userMapper;
+    private UserService userService;
 
-    //以下注解取消掉，就不会开启了
-    //@Scheduled(initialDelay = 5000,fixedRate = Long.MAX_VALUE)
+    @Test
     public void doInsertUsers() {
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
-        final int INSERT_USERS = 100;
+
+        final int INSERT_USERS = 1000;
+        List<User> userList = new ArrayList<>();
+
         for (int i = 0; i < INSERT_USERS; i++) {
             User user = new User();
 
@@ -37,9 +37,13 @@ public class InsertUsers {
             user.setTags("[]");
             user.setUserRole(0);
             user.setPlanetCode("1111122222");
+            userList.add(user);
 
-            userMapper.insert(user);
         }
+
+        userService.saveBatch(userList,100);
+
+
         stopWatch.stop();
         System.out.println(stopWatch.getTotalTimeMillis());
     }
