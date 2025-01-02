@@ -2,17 +2,22 @@ package com.yupi.usercenter.service;
 
 import com.yupi.usercenter.model.domain.User;
 import org.junit.jupiter.api.Test;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
 import javax.annotation.Resource;
+import java.util.concurrent.TimeUnit;
 
 @SpringBootTest
 public class RedisTest {
 
     @Resource
     private RedisTemplate redisTemplate;
+
+
 
     @Test
     void test(){
@@ -29,4 +34,6 @@ public class RedisTest {
         Object yupao = valueOperations.get("yupao1");
         System.out.println(yupao);
     }
+
+
 }
