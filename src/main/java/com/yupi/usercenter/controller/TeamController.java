@@ -11,6 +11,7 @@ import com.yupi.usercenter.model.domain.Team;
 import com.yupi.usercenter.model.domain.User;
 import com.yupi.usercenter.model.dto.TeamQuery;
 import com.yupi.usercenter.model.request.TeamAddRequest;
+import com.yupi.usercenter.model.vo.TeanUserVO;
 import com.yupi.usercenter.service.TeamService;
 import com.yupi.usercenter.service.UserService;
 import lombok.extern.slf4j.Slf4j;
@@ -81,15 +82,27 @@ public class TeamController {
         return ResultUtils.success(team);
     }
 
+//    @GetMapping("/list")
+//    public BaseResponse<List<Team>> listTeams(TeamQuery teamQuery){
+//        if(teamQuery == null){
+//            throw  new BusinessException(ErrorCode.PARAMS_ERROR);
+//        }
+//        Team team = new Team();
+//        BeanUtils.copyProperties(teamQuery,team);
+//        QueryWrapper<Team> queryWrapper = new QueryWrapper<>(team);
+//        List<Team> teamList = teamService.list(queryWrapper);
+//        return ResultUtils.success(teamList);
+//    }
+
+
     @GetMapping("/list")
-    public BaseResponse<List<Team>> listTeams(TeamQuery teamQuery){
+    public BaseResponse<List<TeanUserVO>> listTeams(TeamQuery teamQuery, HttpServletRequest request){
         if(teamQuery == null){
             throw  new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Team team = new Team();
-        BeanUtils.copyProperties(teamQuery,team);
-        QueryWrapper<Team> queryWrapper = new QueryWrapper<>(team);
-        List<Team> teamList = teamService.list(queryWrapper);
+        boolean isAdmin = userService.isAdmin(request);
+
+        List<TeanUserVO> teamList = teamService.listTeams(teamQuery, isAdmin);
         return ResultUtils.success(teamList);
     }
 

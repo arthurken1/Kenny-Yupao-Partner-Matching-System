@@ -20,6 +20,11 @@ public class TeamQuery extends PageRequset {
     private Long id;
 
     /**
+     * 搜索关键词同时对队伍名称和描述搜索
+     */
+    private String searchText;
+
+    /**
      * 队伍名称
      */
     private String name;
