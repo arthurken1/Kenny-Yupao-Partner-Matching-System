@@ -10,6 +10,7 @@ import com.yupi.usercenter.model.domain.User;
 import com.yupi.usercenter.model.domain.UserTeam;
 import com.yupi.usercenter.model.dto.TeamQuery;
 import com.yupi.usercenter.model.enums.TeamStatusEnum;
+import com.yupi.usercenter.model.request.TeamUpdateRequest;
 import com.yupi.usercenter.model.vo.TeanUserVO;
 import com.yupi.usercenter.model.vo.UserVO;
 import com.yupi.usercenter.service.TeamService ;
@@ -195,6 +196,34 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             teamsUserVOList.add(teamsUserVO);
         }
         return teamsUserVOList;
+    }
+
+    @Override
+    public boolean updateTeam(TeamUpdateRequest teamUpdateRequest, User loginUser) {
+        if(teamUpdateRequest == null){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Long id = teamUpdateRequest.getId();
+        if(id == null || id <= 0){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Team oldTeam = this.getById(id);
+        if(oldTeam == null){
+            throw new BusinessException(ErrorCode.NULL_ERROR, "队伍不存在");
+        }
+        if(oldTeam.getUserId() != loginUser.getId() && !userService.isAdmin(loginUser)){
+            throw new BusinessException(ErrorCode.NO_AUTH);
+        }
+        TeamStatusEnum statusEnum = TeamStatusEnum.getEnumByValue(teamUpdateRequest.getStatus());
+        if(statusEnum.equals(TeamStatusEnum.SECRET)){
+            //这边应该是isBlank吧？
+            if(StringUtils.isBlank(teamUpdateRequest.getPassword())){
+                throw new BusinessException(ErrorCode.PARAMS_ERROR, "加密房间必须要密码");
+            }
+        }
+        Team updateTeam = new Team();
+        BeanUtils.copyProperties(teamUpdateRequest,updateTeam);
+        return this.updateById(updateTeam);
     }
 }
 
