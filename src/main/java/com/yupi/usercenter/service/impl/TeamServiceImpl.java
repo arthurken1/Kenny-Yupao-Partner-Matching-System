@@ -297,18 +297,13 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean quitTeam(TeamQuitRequest teamQuitRequest, User loginUser) {
         if(teamQuitRequest == null){
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         Long teamId = teamQuitRequest.getTeamId();
-        if(teamId == null || teamId <= 0){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        Team team = this.getById(teamId);
-        if(team == null){
-            throw new BusinessException(ErrorCode.NULL_ERROR, "队伍不存在");
-        }
+        Team team = getTeamById(teamId);
         long userId = loginUser.getId();
 
         UserTeam queryUserTeam = new UserTeam();
@@ -361,6 +356,43 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         }
         //移除关系
         return userTeamService.remove(queryWrapper);
+    }
+
+    /**
+     * 根据ID获取队伍信息
+     * @param teamId
+     * @return
+     */
+    private Team getTeamById(Long teamId) {
+        if(teamId == null || teamId <= 0){
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        Team team = this.getById(teamId);
+        if(team == null){
+            throw new BusinessException(ErrorCode.NULL_ERROR, "队伍不存在");
+        }
+        return team;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteTeam(Long id, User loginUser) {
+        //队伍是否存在，并获取队伍
+        Team team = getTeamById(id);
+        long teamId = team.getId();
+        //校验是否是队长
+        if(team.getUserId() != loginUser.getId()){
+            throw new BusinessException(ErrorCode.NO_AUTH, "无权限，不是队长");
+        }
+        //移除所有加入队伍的关联信息
+        QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
+        userTeamQueryWrapper.eq("teamId", teamId);
+        boolean result = userTeamService.remove(userTeamQueryWrapper);
+        if(!result){
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "删除队伍关联信息失败");
+        }
+        //删除队伍
+        return this.removeById(teamId);
     }
 
     /**
