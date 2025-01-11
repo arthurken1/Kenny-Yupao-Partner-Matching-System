@@ -26,7 +26,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
+//import org.springframework.util.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 
 
 import javax.annotation.Resource;
@@ -137,6 +138,10 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             Long id = teamQuery.getId();
             if(id != null && id>0){
                 queryWrapper.eq("id", id);
+            }
+            List<Long> idList = teamQuery.getIdList();
+            if(CollectionUtils.isNotEmpty(idList)){
+                queryWrapper.in("id",idList);
             }
             String searchText = teamQuery.getSearchText();
             if(StringUtils.isNotBlank(searchText)){
