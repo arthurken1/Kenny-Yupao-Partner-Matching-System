@@ -4,6 +4,7 @@ package com.yupi.usercenter.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.yupi.usercenter.common.BaseResponse;
+import com.yupi.usercenter.common.DeleteRequest;
 import com.yupi.usercenter.common.ErrorCode;
 import com.yupi.usercenter.common.ResultUtils;
 import com.yupi.usercenter.exception.BusinessException;
@@ -152,10 +153,11 @@ public class TeamController {
     }
 
     @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteTeam(@RequestBody Long id, HttpServletRequest request){
-        if(id <= 0){
+    public BaseResponse<Boolean> deleteTeam(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request){
+        if(deleteRequest == null || deleteRequest.getId() <= 0){
             throw  new BusinessException(ErrorCode.PARAMS_ERROR);
         }
+        long id = deleteRequest.getId();
         User loginUser = userService.getLoginUser(request);
         boolean result = teamService.deleteTeam(id, loginUser);
         if(!result){
