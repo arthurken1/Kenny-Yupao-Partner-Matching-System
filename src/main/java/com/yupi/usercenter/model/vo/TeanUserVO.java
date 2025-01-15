@@ -67,7 +67,12 @@ public class TeanUserVO implements Serializable {
     /**
      * 创建人用户信息
      */
-    UserVO createUser;
+    private UserVO createUser;
+
+    /**
+     * 加入用户数
+     */
+    private Integer hasJoinNum;
 
 
     /**
