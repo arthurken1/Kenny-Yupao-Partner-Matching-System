@@ -21,8 +21,7 @@ spring:
     port: 6379
     host: localhost
     database: 0
-  profiles:
-    active: prod
+
 server:
   port: 8080
   servlet:
