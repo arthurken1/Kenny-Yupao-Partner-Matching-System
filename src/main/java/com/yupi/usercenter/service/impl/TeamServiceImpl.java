@@ -19,10 +19,13 @@ import com.yupi.usercenter.model.vo.UserVO;
 import com.yupi.usercenter.service.TeamService ;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 import com.yupi.usercenter.service.UserService;
 import com.yupi.usercenter.service.UserTeamService;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +50,9 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private RedissonClient redissonClient;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -268,37 +274,49 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
 
         //该用户已加入的用户数量
         long userId = loginUser.getId();
-        QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
-        userTeamQueryWrapper.eq("userId", userId);
-        long hasJoinNum = userTeamService.count(userTeamQueryWrapper);
-        if(hasJoinNum > 5){
-            throw new BusinessException(ErrorCode.PARAMS_ERROR, "最多创建和加入五个队伍");
+        RLock lock = redissonClient.getLock("yupao:join_team");
+        try{
+            //抢到锁并执行
+            while (true){
+                if(lock.tryLock(0, -1, TimeUnit.MILLISECONDS)){
+                    System.out.println("get lock" + Thread.currentThread().getId());
+                    QueryWrapper<UserTeam> userTeamQueryWrapper = new QueryWrapper<>();
+                    userTeamQueryWrapper.eq("userId", userId);
+                    long hasJoinNum = userTeamService.count(userTeamQueryWrapper);
+                    if(hasJoinNum > 5){
+                        throw new BusinessException(ErrorCode.PARAMS_ERROR, "最多创建和加入五个队伍");
+                    }
+                    //不能重复加入已加入的队伍
+                    userTeamQueryWrapper = new QueryWrapper<>();
+                    userTeamQueryWrapper.eq("teamId", teamId);
+                    userTeamQueryWrapper.eq("userId", userId);
+                    long hasUserJoinTeam = userTeamService.count(userTeamQueryWrapper);
+                    if(hasUserJoinTeam > 0){
+                        throw new BusinessException(ErrorCode.NULL_ERROR, "已加入了");
+                    }
+                    //队伍中已加入的人数
+                    long teamHasJoinNum = this.countTeamUserByTeamId(teamId);
+                    if(teamHasJoinNum >= team.getMaxNum()){
+                        throw new BusinessException(ErrorCode.NULL_ERROR, "队伍已满");
+                    }
+                    //修改队伍信息
+                    UserTeam userTeam = new UserTeam();
+                    userTeam.setUserId(userId);
+                    userTeam.setTeamId(teamId);
+                    userTeam.setJoinTime(new Date());
+
+                    return userTeamService.save(userTeam);
+                }
+            }
+        } catch (InterruptedException e) {
+            log.error("doCacheRecommendUser", e);
+            return false;
+        } finally {
+            if(lock.isHeldByCurrentThread()){
+                System.out.println("unlock" + Thread.currentThread().getId());
+                lock.unlock();
+            }
         }
-        //不能重复加入已加入的队伍
-        userTeamQueryWrapper = new QueryWrapper<>();
-        userTeamQueryWrapper.eq("teamId", teamId);
-        userTeamQueryWrapper.eq("userId", userId);
-        long hasUserJoinTeam = userTeamService.count(userTeamQueryWrapper);
-        if(hasUserJoinTeam > 0){
-            throw new BusinessException(ErrorCode.NULL_ERROR, "已加入了");
-        }
-
-        //队伍中已加入的人数
-
-        long teamHasJoinNum = this.countTeamUserByTeamId(teamId);
-        if(teamHasJoinNum >= team.getMaxNum()){
-            throw new BusinessException(ErrorCode.NULL_ERROR, "队伍已满");
-        }
-
-        UserTeam userTeam = new UserTeam();
-        userTeam.setUserId(userId);
-        userTeam.setTeamId(teamId);
-        userTeam.setJoinTime(new Date());
-
-
-        return userTeamService.save(userTeam);
-
-
     }
 
     @Override
