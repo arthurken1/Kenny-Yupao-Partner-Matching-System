@@ -7,7 +7,7 @@
 
 spring:
   application:
-    name: user-center-backend
+    name: yupao-backend
   # DataSource Config
   datasource:
     driver-class-name: com.mysql.jdbc.Driver
@@ -25,6 +25,7 @@ spring:
     port: 6379
     host: localhost
     database: 0
+#这里注意配置是哪个环境，记得改！！！，不然在自己的电脑上用不了
   profiles:
     active: prod
 server:
